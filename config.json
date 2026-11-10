@@ -1,0 +1,42 @@
+{
+  "dataset_id": "Adignite/ObfusQA",
+
+  "layout": "AUTO",
+  "columns": {
+    "id": null,
+    "base": null,
+    "nei": null,
+    "di": null,
+    "co": null,
+    "answer": null,
+    "aliases": null,
+    "type_column": null,
+    "type_values": {"BASE": null, "NEI": null, "DI": null, "CO": null}
+  },
+
+  "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+  "fallback_model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "quantization": "bitsandbytes-nf4-4bit",
+  "max_new_tokens": 32,
+  "batch_size": 16,
+  "seed": 0,
+
+  "answer_prompt": "Answer the following question with only the answer. Do not explain.\n\nQuestion: {question}",
+  "resolve_prompt": "The following question refers to a person, place or thing indirectly, without naming it. Which specific person, place or thing is being described? Reply with only its name.\n\nQuestion: {question}",
+  "hint_template": "Hint: the indirect description in this question refers to {entity}.\n\n{question}",
+
+  "padding": {
+    "source_dataset": "wikitext",
+    "source_config": "wikitext-103-raw-v1",
+    "source_split": "train",
+    "max_pool_sentences": 200000,
+    "min_words": 8,
+    "max_words": 40,
+    "tolerance": 0.05
+  },
+
+  "sampling": {"enabled": false, "n_samples": 5, "temperature": 0.7},
+
+  "bootstrap_resamples": 10000,
+  "output_dir": "/content/drive/MyDrive/obfusqa_runs"
+}
