@@ -1,36 +1,36 @@
 # What does a failure on ObfusQA measure?
 
-A small, pre-registered study on [ObfusQA](https://huggingface.co/datasets/Adignite/ObfusQA)
-(Ghosh et al., *ObfusQAte*, LREC 2026) using one open 8B model on a Colab T4.
+Interim study on [ObfusQA](https://huggingface.co/datasets/Adignite/ObfusQA)
+(*ObfusQAte*, LREC 2026) with one open model: Llama-3.1-8B-Instruct, 4-bit NF4, greedy decoding,
+256 base items x 4 conditions, plus a length-matched control. Run on a Colab T4.
 
-| RQ | Question | Experiment |
-|---|---|---|
-| 1 | How much of the CO drop is due to length alone? | C5: BASE padded to CO length |
-| 2 | When obfuscation causes a failure, what is the cause? | Fixed-order failure attribution |
-| 3 | On NEI, resolution failure or composition failure? | P1 resolve, I1 own hint, I2 oracle hint |
-| 4 | Do automatic labels agree with humans? CO content? | 60 labelled failures, 50-item CO audit, Cohen's kappa |
+## Results so far
 
-## Run
-1. Commit `PREREGISTRATION.md` with the date.
-2. Open `notebooks/run_colab.ipynb` in Colab (Runtime > Change runtime type > T4 GPU) and run cells in order.
-3. CPU tests: `python -m pytest -q tests/`
+| Condition | Accuracy | Diff vs BASE [95% paired bootstrap CI] | Exact McNemar p |
+|---|---|---|---|
+| BASE | 53.9% | - | - |
+| NEI | 28.9% | -25.0 [19.1, 30.9] | <0.001 |
+| DI | 23.0% | -30.9 [24.2, 37.5] | <0.001 |
+| CO | 26.6% | -27.3 [20.7, 33.6] | <0.001 |
+| C5: BASE padded to CO length | 50.4% | -3.5 [-0.4, 7.4] | 0.12 |
 
-## Layout
-```
-config.json            settings (model, prompts, decoding, padding, output folder)
-src/data.py            load ObfusQA -> long table (item_id, condition, text, gold, aliases)
-src/score.py           normalisation, exact match, contains-gold flag
-src/generate.py        4-bit model loading, batched resumable greedy generation
-src/padding.py         C5 construction + leak check
-src/probes.py          gold-entity guess (hand-checked), P1/I1/I2 prompts, P1 scoring
-src/stats.py           paired bootstrap, exact McNemar, Wilson CI, length share
-src/analysis.py        scoring, wide table, Table 1, Table 2, answer-in-text check
-src/attribute.py       failure-cause decision tree + summary
-src/annotate.py        annotation exports + kappa
-src/figures.py         Figure 1
-tests/test_core.py     CPU tests for the above
-```
+- **Length is not the cause of the CO drop**: length explains at most ~13% of it (CI -1.5% to 27%).
+- **~20% of DI failures** (CI 13-30%) answer with a distractor named in the question (`results/attribution_summary.csv`, `results/figure1_attribution.png`).
+- **Exploratory**: among items answered correctly on BASE, lexical overlap with the base question predicts success
+  (odds x1.45 per SD, p = 0.001); length and obfuscation type are not significant once overlap is included
+  (`results/factors_logit.csv`). Correlational.
+- `results/leak_candidates_UNVERIFIED.csv` lists variants whose text may contain the gold answer; not yet hand-checked.
 
-## Reporting
-Every difference is paired and reported with a 95% bootstrap CI and an exact McNemar p-value.
-Limitations: one quantised model, one prompt, single-cause attribution, string-matching for distractors.
+**Scoring note.** ObfusQA stores most gold answers as one comma-joined alias string. They must be split before exact-match
+scoring (`src/data.py`); otherwise BASE accuracy reads ~12%.
+
+**Limitations.** One quantised model, one prompt, single-cause attribution, string matching for distractors.
+
+## Reproduce
+- Colab: `notebooks/run_colab.ipynb` (T4 GPU), cells in order.
+- Recompute tables from saved outputs: `python -m src.rescore <run_dir>`, then `python -m src.factors <run_dir>/rescored`.
+- CPU tests: `python -m pytest -q tests/`
+
+## In progress
+Single-factor variants (indirection-only, distractor-only, context-only, overlap-matched paraphrase), NEI resolution
+probes with hand-checked entities, and human validation of the failure attribution. See `ANALYSIS_PLAN.md`.

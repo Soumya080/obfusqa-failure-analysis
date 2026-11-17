@@ -103,6 +103,10 @@ def _parse_answer(v):
         gold = v.get("value") or v.get("normalized_value") or ""
         return str(gold), _parse_aliases(v.get("aliases"))
     al = _parse_aliases(v)
+    # ObfusQA stores TriviaQA answers as ONE comma-joined string of aliases, e.g.
+    # "Anita Loos, Cheri (play), anita loos". Split it so every alias counts as correct.
+    if len(al) == 1 and ", " in al[0]:
+        al = [x.strip() for x in al[0].split(", ") if x.strip()]
     if len(al) > 1:
         return al[0], al[1:]
     return (al[0] if al else ""), []

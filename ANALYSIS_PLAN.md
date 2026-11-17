@@ -1,19 +1,17 @@
-# Pre-registration: failure attribution on ObfusQA
+# Analysis plan: failure attribution on ObfusQA
 
-**Commit this file, with today's date, BEFORE running any condition beyond the 20-item smoke test.**
-Fill the blanks marked [ ]. Do not edit hypotheses or decision rules after seeing results; if you must
-change something, add a dated "Amendment" section at the bottom saying what and why.
+**Status.** Written before the main runs (first committed 2026-11-10 17:23 IST). Blanks filled on 2026-11-17. Changes after seeing data are listed under Amendments.
 
-Date committed: [YYYY-MM-DD]
+Date written: 2026-11-10
 Author: Soumy Sawant
 
 ## Data
 - Dataset: ObfusQA (`Adignite/ObfusQA`, MIT licence), all base items and their NEI, DI and CO variants.
-- n base items: [fill from data.check_long_table]
-- Aliases: [none / recovered from TriviaQA rc.nocontext by matching base question text]
+- n base items: 256 (4 conditions each)
+- Aliases: taken from the dataset gold field, split on ", " (see Amendment 1)
 
 ## Model and decoding
-- Model: [meta-llama/Llama-3.1-8B-Instruct | Qwen/Qwen2.5-7B-Instruct], 4-bit NF4 (bitsandbytes), Colab T4.
+- Model: meta-llama/Llama-3.1-8B-Instruct, 4-bit NF4 (bitsandbytes), Colab T4.
 - Greedy decoding, max_new_tokens = 32, the model's chat template, batch size 16, seed 0.
 - Answer prompt: exactly as in config.json `answer_prompt`.
 - Metric: SQuAD-style normalised exact match against gold + aliases. A secondary "contains gold" flag
@@ -54,4 +52,10 @@ One quantised open model; one prompt; single-cause attribution; string-matching 
 distractors; the gold entity for NEI is hand-checked but may be ambiguous for some items.
 
 ## Amendments
-(none yet)
+1. **2026-11-11, scoring fix.** ObfusQA gold answers are comma-joined alias strings. The first scoring treated each as one
+   string (BASE EM ~12%). Gold strings are now split on ", " and every part counts as a valid answer. All tables were
+   recomputed from the saved model outputs with `src/rescore.py`; no model outputs changed.
+2. **2026-11-11, scope.** NEI probes (P1/I1/I2) and the human-annotation results are excluded from reported results until
+   gold entities are hand-checked and two independent annotators have labelled the samples.
+3. **2026-11-11, added exploratory analysis.** `src/factors.py` (logistic regression of correctness on length, lexical
+   overlap and entity count) was added after seeing the data and is reported as exploratory only.
